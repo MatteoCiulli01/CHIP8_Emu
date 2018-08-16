@@ -17,6 +17,8 @@ import java.util.Random;
 
 
 public class Chip8 {
+    public boolean isRunning = false;
+    
    private char memory[]; //Main memory
    private char V[]; //registers
    private char stack[]; //stack
@@ -33,7 +35,14 @@ public class Chip8 {
    
    private boolean needsRedraw;
    
-    private Random randomizer = new Random();
+   private Random randomizer = new Random();
+   
+   //used to get accurate timings
+   private long currentInstruction=0;
+   private long lastInstruction;
+   //used to tick the timers
+   private long currentTick=0;
+   private long lastTick=0;
    
    public void init(){
        memory = new char[4096];
@@ -57,8 +66,10 @@ public class Chip8 {
    
    public void run() {
        //fetch
+       lastInstruction=currentInstruction;
+       currentInstruction=System.nanoTime();
        char opcode = (char)((memory[ip] << 8) | memory[ip+1]);
-       //System.out.println(Integer.toHexString(opcode) + ": ");
+       System.out.println(Integer.toHexString(opcode) + ": ");
        //decode & execute
         switch(opcode & 0xF000){
         case 0x0000:
@@ -297,22 +308,30 @@ public class Chip8 {
             System.err.println("Unsupported Opcode");
             System.exit(0);  
        }
-        
-        if(sound_timer >0){
-            if(Audio.isRunning==false)
-                Audio.playSound("/res/beep.wav");
-            sound_timer--;
-        }
-        else{
-            if(Audio.isRunning==true)
-            Audio.stopSound();
-        }
-        
-        if(delay_timer > 0)
-            delay_timer--;
-       
+       tickTimers();
        
    }
+   
+   private void tickTimers(){
+       currentTick=System.nanoTime();
+       if(currentTick-lastTick >= 16666667){ //ticks every 60 hz
+           //System.err.println("Ticked");
+           lastTick=currentTick;
+            if(sound_timer > 0){
+                if(Audio.isRunning==false)
+                    Audio.playSound("/res/beep.wav");
+                sound_timer--;
+            }
+            else{
+                if(Audio.isRunning==true)
+                Audio.stopSound();
+            }
+
+            if(delay_timer > 0)
+                delay_timer--;
+       }
+   }
+   
    public byte[] getFrame(){
         return frame;
     }
@@ -335,10 +354,7 @@ public class Chip8 {
                 offset++;
         }
             }catch(IOException e){
-            System.out.println("infatti");
             System.exit(0);
-        }finally{
-            System.out.println("e invece...");
         }
     }
     

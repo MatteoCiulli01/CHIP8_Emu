@@ -9,39 +9,79 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import chip8.Chip8;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import javax.swing.AbstractAction;
+import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 
 public class EmuFrame extends JFrame implements KeyListener{
    
     private ChipPanel panel;
     private int[] keyBuffer;
     private int[] keyIDs;
+    private JMenuBar menuBar;
+    private JMenu mfile,moptions,mhelp, mspeed;
+    private JMenuItem iloadrom,iexit;
+    private JMenuItem i1000, i500, i250;
+    final JFileChooser fc = new JFileChooser();
+    
+    
     
     
     public EmuFrame(Chip8 c){
+        
+        menuBar = new JMenuBar();
+        mfile=new JMenu("File");
+        iloadrom=new JMenuItem(new AbstractAction("Load ROM...") {
+            public void actionPerformed(ActionEvent ae) {
+                Main.chip8.isRunning=false;
+                if(fc.showOpenDialog(panel)==0){
+                    Main.chip8.init();
+                    Main.chip8.loadROM(fc.getSelectedFile().getPath());
+                    Main.chip8.isRunning=true;
+                }
+                else{
+                    Main.chip8.isRunning=true;
+                }
+            }});
+        iexit=new JMenuItem(new AbstractAction("Exit") {
+            public void actionPerformed(ActionEvent ae) {
+                System.exit(0);
+            }});
+        mfile.add(iloadrom);
+        mfile.add(iexit);
+        menuBar.add(mfile);
+        
+        
+        
         setPreferredSize(new Dimension(640,320));
         pack(); //create the frame
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(false);
-        setPreferredSize(new Dimension(640 + getInsets().left + getInsets().right*0 -2 ,320 + getInsets().top + getInsets().bottom*0 -2)); //add borders to the total dimension of the frame
+        setJMenuBar(menuBar);
+        setPreferredSize(new Dimension(640 + getInsets().left + getInsets().right ,320 + getInsets().top + 23 + getInsets().bottom)); //add borders to the total dimension of the frame
         panel=new ChipPanel(c); //create the canvas
         setLayout(new BorderLayout()); //set the layout manager so you can use EmuPanel
         add(panel, BorderLayout.CENTER); //aline the center of panel with the center of the frame and adds it
         setDefaultCloseOperation(EXIT_ON_CLOSE); //close
-        setTitle("Maulo Rapio (speed 2x)");
+        setTitle("CHIP-8 Emulator (Running @"+Main.tickRate+" Hz)");
         pack(); //reset the frame
         setVisible(true); //show the frame
         addKeyListener(this);
         
+        
         keyBuffer = new int[16];
-        keyIDs = new int[256];
+        keyIDs = new int[1024];
         
         setIDs();
         
     }
     public void setIDs(){
-        for(int i=0;i<256;i++){
+        for(int i=0;i<1024;i++){
             keyIDs[i]=-1;
         }
         keyIDs['X'] = 0x0;

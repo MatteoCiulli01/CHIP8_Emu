@@ -28,7 +28,6 @@ public class Audio {
     }
     public static void stopSound(){
         clip.stop();
-        clip.close();
         isRunning=false;
     }
 
